@@ -27,9 +27,9 @@ Formato del archivo:
 
 Reglas:
 
-- Por defecto se **excluyen** las facturas `void`. `--include-void` las incluye. **Supuesto:** María dice "las anuladas creo que no, o a veces sí para cuadrar".
-- `--month YYYY-MM` filtra por `issuedAt`. Es opcional: sin el flag se exportan todos los meses.
-- Sin `--out`, el archivo se llama `facturas.csv` y queda en el directorio actual. Con `--out` se escribe en esa ruta. Si ya existe, se sobrescribe. **Supuesto:** el ticket dice que el nombre "no quedó fijo".
+- Por defecto se **excluyen** las facturas `void`: lo seguro es no mandar anuladas al banco. `--include-void` las incluye, para cuando tesorería necesite cuadrar. Decidido en el grill; María lo confirma (ver "Fuera").
+- `--month YYYY-MM` filtra por `issuedAt`. Es opcional: sin el flag se exportan todos los meses. Es válido solo con año de 4 dígitos y mes `01` a `12` (`^\d{4}-(0[1-9]|1[0-2])$`); cualquier otro valor es un error.
+- Sin `--out`, el archivo se llama `facturas.csv` y queda en el directorio actual. Con `--out` se escribe en esa ruta, y no se crean carpetas: si el directorio no existe o no se puede escribir, es un error. Si ya existe, se sobrescribe sin avisar (decidido en el grill: para conservar uno anterior está `--out`). **Supuesto:** el ticket dice que el nombre "no quedó fijo".
 
 ## Aceptación observable
 
@@ -43,9 +43,10 @@ Cada criterio se escribe como test y falla antes de codear. Fixture: `src/data/i
 6. Todas las líneas terminan en `\r\n`.
 7. Un cliente con `;` o `"` sale entre comillas y con la `"` interna duplicada (test unitario sobre `src/csv.js`).
 8. Con `--out <ruta>`, el archivo se escribe en esa ruta y no se crea `facturas.csv`.
-9. Con `--month` inválido (`2026-8`, `agosto`), el comando sale con código 1, escribe un mensaje en stderr y no crea ningún archivo.
+9. Con `--month` inválido (`2026-8`, `agosto`, `2026-13`, `2026-00`), el comando sale con código 1, escribe un mensaje en stderr y no crea ningún archivo.
 10. Con un mes sin facturas (`--month 2025-01`), el archivo tiene solo el encabezado y el comando sale con código 0.
 11. `list` y `get` no cambian: los tests actuales siguen pasando, incluido "the listing still includes voided invoices".
+12. Con `--out` en un directorio que no existe (por ejemplo `no-existe/x.csv`), el comando sale con código 1, escribe un mensaje legible en stderr (no un stack trace) y no crea la carpeta ni el archivo.
 
 ## Fuera de alcance
 
@@ -55,4 +56,10 @@ Cada criterio se escribe como test y falla antes de codear. Fixture: `src/data/i
 - Otros filtros: por cliente, por estado distinto de `void` o por rango de fechas.
 - Formatear montos como moneda (`$1.250.000`) o traducir los estados.
 - Cambiar el comportamiento de `list` y `get`, o modificar `src/data/invoices.json`.
+- Elegir el separador (`--delimiter`): el CSV sale siempre con `;`.
 - Generar el nombre del archivo a partir del mes (`export-tesoreria-agosto.csv`): se cubre con `--out`.
+
+Preguntas abiertas (responde María, dueña del ticket):
+
+- ¿El Excel de tesorería usa `;` o `,` como separador? Si usa `,`, hay que reabrir `--delimiter`.
+- ¿Las facturas `void` se excluyen por defecto, y en qué casos tesorería las necesita "para cuadrar"? Mientras tanto rige lo del grill: se excluyen, con `--include-void`.
