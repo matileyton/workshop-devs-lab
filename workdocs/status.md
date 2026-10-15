@@ -27,8 +27,8 @@ Anota el comando y el resultado. Primero rojo. Después verde, o un gap citado.
 
 | Story | Comando | Resultado | Gap (si sigue rojo) |
 |---|---|---|---|
-| T-01-story-1 | | | |
-| T-01-story-2 | `npm test` | Rojo (2026-10-15): fallan los 6 tests de `test/export-month.test.js` (criterios 4, 9 y 10). Los 4 tests de `test/invoices.test.js` siguen verdes, incluido "the listing still includes voided invoices". | Falta el código. Bloqueada por la story 1: `src/csv.js` y `src/export.js` todavía no están en `main`, así que el comando `export-csv` no existe. |
+| T-01-story-1 | `npm test` | Rojo (2026-10-15): `test/export.test.js` 5 fail (criterios 1, 2, 5, 6, 7); 4 pass (tests previos de `list`/`get`). Falla porque `export-csv` y `src/csv.js` no existen. Verde (2026-10-15): 9 tests, 9 pass, 0 fail. Revisión de seguridad: se agregó el criterio 13 (CWE-1236); rojo 1 fail de 10, luego verde 10 de 10. Review del agente: criterio 14, tab y CR, campos vacíos; rojo 3 fail de 12, luego verde 12 de 12. | Ninguno. |
+| T-01-story-2 | `npm test` | Rojo (2026-10-15): fallan los 6 tests de `test/export-month.test.js` (criterios 4, 9 y 10). El resto de la suite sigue verde. | Falta el código. La story 1 ya está en `main` (PR #5), así que el bloqueo se levantó: toca implementar `src/month.js` y el filtro. |
 | T-01-story-3 | | | |
 
 ## Workers
@@ -37,6 +37,7 @@ Una tarea acotada y su resumen. Si hubo implementación y falta esta línea, M4 
 
 | Story | Tarea | Resumen |
 |---|---|---|
+| T-01-story-1 | Explore (solo lectura): revisar `test/export.test.js` contra los criterios 1, 2, 5, 6 y 7 de la SPEC. | Los 5 criterios quedan asertados. Sin falsos verdes claros. Los 5 tests fallan por ausencia de código, no por otra causa. Nota: `npm test` debe correr desde la raíz del repo (el test usa `path.resolve('src/cli.js')`). |
 | T-01-story-2 | Worker de investigación (Explore, solo lectura): revisar `test/export-month.test.js` contra los criterios 4, 9 y 10 de `SPEC.md`, buscando aserciones sin respaldo y falsos verdes. | Encontró dos cosas, ambas corregidas: (1) `assert.match(stderr, /month/i)` imponía wording en inglés que la spec no fija → ahora acepta el valor inválido, `month` o `mes`; (2) "no crea ningún archivo" solo miraba `facturas.csv` → ahora exige el directorio vacío con `readdirSync`. Sin hallazgos en el criterio 4. |
 
 ## Día 3
