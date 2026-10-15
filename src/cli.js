@@ -1,7 +1,7 @@
-import { writeFileSync } from 'node:fs'
 import { parseArgs } from 'node:util'
 import { buildExport } from './export.js'
 import { getInvoice, listInvoices } from './invoices.js'
+import { writeCsv } from './output.js'
 
 function printInvoice(invoice) {
   console.log(
@@ -33,21 +33,27 @@ if (command === 'get') {
 }
 
 if (command === 'export-csv') {
-  // Flags declarados para las stories 2 y 3; la story 1 aún no los usa.
+  // --month se declara para la story 2; aún no se usa.
+  let values
   try {
-    parseArgs({
+    ;({ values } = parseArgs({
       args: process.argv.slice(3),
       options: {
         month: { type: 'string' },
         'include-void': { type: 'boolean' },
         out: { type: 'string' },
       },
-    })
+    }))
   } catch (error) {
     console.error(error.message)
     process.exit(1)
   }
-  writeFileSync('facturas.csv', buildExport())
+  try {
+    writeCsv(values.out ?? 'facturas.csv', buildExport({ includeVoid: values['include-void'] }))
+  } catch (error) {
+    console.error(error.message)
+    process.exit(1)
+  }
   process.exit(0)
 }
 

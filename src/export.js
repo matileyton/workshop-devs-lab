@@ -1,7 +1,7 @@
 import { toCsv } from './csv.js'
 import { listInvoices } from './invoices.js'
 
-// month e includeVoid ya están en la firma; las stories 2 y 3 los implementan.
+// month ya está en la firma; la story 2 lo implementa.
 export function buildExport({ month, includeVoid } = {}) {
-  return toCsv(listInvoices().filter((invoice) => invoice.status !== 'void'))
+  return toCsv(listInvoices().filter((invoice) => includeVoid || invoice.status !== 'void'))
 }
