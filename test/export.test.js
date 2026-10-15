@@ -48,6 +48,15 @@ test('criterio 6: todas las líneas terminan en \\r\\n', () => {
   assert.ok(!/(^|[^\r])\n/.test(content), 'hay un \\n sin \\r')
 })
 
+test('criterio 13: neutraliza fórmulas al inicio del campo', async () => {
+  const { toCsv } = await import('../src/csv.js')
+  const row = (client) => ({ id: 'F-1', client, issuedAt: '2026-08-01', amount: 1, status: 'paid' })
+  for (const client of ['=SUMA(A1)', '+1', '-1', '@cmd']) {
+    assert.ok(toCsv([row(client)]).includes(`F-1;'${client};2026-08-01;1;paid\r\n`), client)
+  }
+  assert.ok(toCsv([row('Taller Norte')]).includes('F-1;Taller Norte;2026-08-01;1;paid\r\n'))
+})
+
 test('criterio 7: escapa campos con ; y " (RFC 4180)', async () => {
   const { toCsv } = await import('../src/csv.js')
   const csv = toCsv([

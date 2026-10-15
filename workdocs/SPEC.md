@@ -23,6 +23,7 @@ Formato del archivo:
 - `monto` como entero, sin símbolo ni separador de miles (`1250000`, no `$1.250.000`).
 - `estado` con el valor del JSON (`paid`, `open`, `void`), sin traducir. **Supuesto.**
 - Un campo con `;`, `"` o salto de línea va entre comillas dobles, y cada `"` interna se duplica (RFC 4180).
+- Un campo de texto que empieza con `=`, `+`, `-` o `@` se prefija con `'` para que Excel no lo interprete como fórmula (CWE-1236). Aplica a `id`, `cliente`, `fecha` y `estado`; `monto` es número y no se toca. Agregado tras la revisión de seguridad del PR de la story 1.
 - Las filas salen en el mismo orden que el JSON.
 
 Reglas:
@@ -47,6 +48,7 @@ Cada criterio se escribe como test y falla antes de codear. Fixture: `src/data/i
 10. Con un mes sin facturas (`--month 2025-01`), el archivo tiene solo el encabezado y el comando sale con código 0.
 11. `list` y `get` no cambian: los tests actuales siguen pasando, incluido "the listing still includes voided invoices".
 12. Con `--out` en un directorio que no existe (por ejemplo `no-existe/x.csv`), el comando sale con código 1, escribe un mensaje legible en stderr (no un stack trace) y no crea la carpeta ni el archivo.
+13. Un cliente que empieza con `=`, `+`, `-` o `@` sale con `'` al inicio (por ejemplo `'=SUMA(A1)`), y un cliente normal no cambia (test unitario sobre `src/csv.js`).
 
 ## Fuera de alcance
 

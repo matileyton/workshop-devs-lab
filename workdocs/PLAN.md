@@ -26,7 +26,7 @@ Convención de tests: cada story escribe su propio archivo en `test/` (no editan
 
 **Contratos que cambian:** comando `node src/cli.js export-csv`; módulos nuevos `toCsv(invoices) -> string` y `buildExport(options) -> string`.
 
-**Test de aceptación (falla antes de codear):** `test/export.test.js`, criterios 1, 2, 5, 6, 7 y 11. Ejemplo: `export-csv` sin flags crea `facturas.csv` que empieza con el BOM, cuya primera línea es `id;cliente;fecha;monto;estado` y que no contiene F-1003.
+**Test de aceptación (falla antes de codear):** `test/export.test.js`, criterios 1, 2, 5, 6, 7, 11 y 13. Ejemplo: `export-csv` sin flags crea `facturas.csv` que empieza con el BOM, cuya primera línea es `id;cliente;fecha;monto;estado` y que no contiene F-1003.
 
 ### Story 2: `feat/T-01-story-2`
 
