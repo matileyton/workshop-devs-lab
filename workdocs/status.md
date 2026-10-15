@@ -27,7 +27,7 @@ Anota el comando y el resultado. Primero rojo. Después verde, o un gap citado.
 
 | Story | Comando | Resultado | Gap (si sigue rojo) |
 |---|---|---|---|
-| T-01-story-1 | `npm test` | Rojo (2026-10-15): `test/export.test.js` 5 fail (criterios 1, 2, 5, 6, 7); 4 pass (tests previos de `list`/`get`). Falla porque `export-csv` y `src/csv.js` no existen. Verde (2026-10-15): 9 tests, 9 pass, 0 fail. Revisión de seguridad: se agregó el criterio 13 (CWE-1236); rojo 1 fail de 10, luego verde 10 de 10. | Ninguno. |
+| T-01-story-1 | `npm test` | Rojo (2026-10-15): `test/export.test.js` 5 fail (criterios 1, 2, 5, 6, 7); 4 pass (tests previos de `list`/`get`). Falla porque `export-csv` y `src/csv.js` no existen. Verde (2026-10-15): 9 tests, 9 pass, 0 fail. Revisión de seguridad: se agregó el criterio 13 (CWE-1236); rojo 1 fail de 10, luego verde 10 de 10. Review del agente: criterio 14, tab y CR, campos vacíos; rojo 3 fail de 12, luego verde 12 de 12. | Ninguno. |
 | T-01-story-2 | | | |
 | T-01-story-3 | | | |
 

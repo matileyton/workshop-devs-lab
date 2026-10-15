@@ -2,8 +2,9 @@ const BOM = '﻿'
 const HEADER = ['id', 'cliente', 'fecha', 'monto', 'estado']
 
 function escapeField(value) {
-  // Excel interpreta como fórmula un texto que empieza con = + - @ (CWE-1236).
-  const text = typeof value === 'string' && /^[=+\-@]/.test(value) ? `'${value}` : String(value)
+  if (value == null) return ''
+  // Excel interpreta como fórmula un texto que empieza con = + - @ tab o CR (CWE-1236).
+  const text = typeof value === 'string' && /^[=+\-@\t\r]/.test(value) ? `'${value}` : String(value)
   return /[;"\r\n]/.test(text) ? `"${text.replaceAll('"', '""')}"` : text
 }
 
