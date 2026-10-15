@@ -46,3 +46,5 @@ Una tarea acotada y su resumen. Si hubo implementación y falta esta línea, M4 
 **Quedó fuera (gap, no vendido como merge):**
 
 **PRs:**
+
+- T-01-story-2 (Antonia Urrutia): https://github.com/matileyton/workshop-devs-lab/pull/6 — draft, solo el test rojo.
