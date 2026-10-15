@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { spawnSync } from 'node:child_process'
-import { existsSync, mkdtempSync, readFileSync } from 'node:fs'
+import { existsSync, mkdtempSync, readFileSync, readdirSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -17,6 +17,7 @@ function runExport(args) {
   const result = spawnSync(process.execPath, [cli, 'export-csv', ...args], {
     cwd,
     encoding: 'utf8',
+    timeout: 10_000,
   })
   return { ...result, cwd, csvPath: join(cwd, 'facturas.csv') }
 }
@@ -43,11 +44,12 @@ test('--month 2026-08 exporta solo las facturas de agosto', () => {
 // Criterio 9
 for (const month of ['2026-8', 'agosto', '2026-13', '2026-00']) {
   test(`--month ${month} es inválido: código 1, stderr y ningún archivo`, () => {
-    const { status, stderr, csvPath } = runExport(['--month', month])
+    const { status, stderr, cwd } = runExport(['--month', month])
     assert.equal(status, 1)
     // El mensaje tiene que ser sobre el mes, no el usage de un comando desconocido.
-    assert.match(stderr, /month/i)
-    assert.equal(existsSync(csvPath), false, 'creó facturas.csv con un mes inválido')
+    // La spec no fija el wording: sirve el valor inválido, "month" o "mes".
+    assert.match(stderr, new RegExp(`${month}|month|mes`, 'i'))
+    assert.deepEqual(readdirSync(cwd), [], 'creó algún archivo con un mes inválido')
   })
 }
 

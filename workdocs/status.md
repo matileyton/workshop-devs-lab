@@ -37,7 +37,7 @@ Una tarea acotada y su resumen. Si hubo implementación y falta esta línea, M4 
 
 | Story | Tarea | Resumen |
 |---|---|---|
-| | | |
+| T-01-story-2 | Worker de investigación (Explore, solo lectura): revisar `test/export-month.test.js` contra los criterios 4, 9 y 10 de `SPEC.md`, buscando aserciones sin respaldo y falsos verdes. | Encontró dos cosas, ambas corregidas: (1) `assert.match(stderr, /month/i)` imponía wording en inglés que la spec no fija → ahora acepta el valor inválido, `month` o `mes`; (2) "no crea ningún archivo" solo miraba `facturas.csv` → ahora exige el directorio vacío con `readdirSync`. Sin hallazgos en el criterio 4. |
 
 ## Día 3
 
