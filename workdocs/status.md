@@ -27,7 +27,7 @@ Anota el comando y el resultado. Primero rojo. Después verde, o un gap citado.
 
 | Story | Comando | Resultado | Gap (si sigue rojo) |
 |---|---|---|---|
-| T-01-story-1 | | | |
+| T-01-story-1 | `npm test` | Rojo (2026-10-15): `test/export.test.js` 5 fail (criterios 1, 2, 5, 6, 7); 4 pass (tests previos de `list`/`get`). Falla porque `export-csv` y `src/csv.js` no existen. | Pendiente: código de producto (`src/csv.js`, `src/export.js`, comando en `src/cli.js`). |
 | T-01-story-2 | | | |
 | T-01-story-3 | | | |
 
@@ -37,7 +37,7 @@ Una tarea acotada y su resumen. Si hubo implementación y falta esta línea, M4 
 
 | Story | Tarea | Resumen |
 |---|---|---|
-| | | |
+| T-01-story-1 | Explore (solo lectura): revisar `test/export.test.js` contra los criterios 1, 2, 5, 6 y 7 de la SPEC. | Los 5 criterios quedan asertados. Sin falsos verdes claros. Los 5 tests fallan por ausencia de código, no por otra causa. Nota: `npm test` debe correr desde la raíz del repo (el test usa `path.resolve('src/cli.js')`). |
 
 ## Día 3
 
