@@ -1,7 +1,9 @@
 import { toCsv } from './csv.js'
 import { listInvoices } from './invoices.js'
+import { filterByMonth } from './month.js'
 
-// month ya está en la firma; la story 2 lo implementa.
 export function buildExport({ month, includeVoid } = {}) {
-  return toCsv(listInvoices().filter((invoice) => includeVoid || invoice.status !== 'void'))
+  let invoices = listInvoices().filter((invoice) => includeVoid || invoice.status !== 'void')
+  if (month) invoices = filterByMonth(invoices, month)
+  return toCsv(invoices)
 }

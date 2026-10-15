@@ -1,6 +1,7 @@
 import { parseArgs } from 'node:util'
 import { buildExport } from './export.js'
 import { getInvoice, listInvoices } from './invoices.js'
+import { isValidMonth } from './month.js'
 import { writeCsv } from './output.js'
 
 function printInvoice(invoice) {
@@ -33,23 +34,30 @@ if (command === 'get') {
 }
 
 if (command === 'export-csv') {
-  // --month se declara para la story 2; aún no se usa.
-  let values
+  let parsed
   try {
-    ;({ values } = parseArgs({
+    parsed = parseArgs({
       args: process.argv.slice(3),
       options: {
         month: { type: 'string' },
         'include-void': { type: 'boolean' },
         out: { type: 'string' },
       },
-    }))
+    })
   } catch (error) {
     console.error(error.message)
     process.exit(1)
   }
+  const { values } = parsed
+  if (values.month !== undefined && !isValidMonth(values.month)) {
+    console.error(`invalid --month: ${values.month} (expected YYYY-MM, e.g. 2026-08)`)
+    process.exit(1)
+  }
   try {
-    writeCsv(values.out ?? 'facturas.csv', buildExport({ includeVoid: values['include-void'] }))
+    writeCsv(
+      values.out ?? 'facturas.csv',
+      buildExport({ month: values.month, includeVoid: values['include-void'] }),
+    )
   } catch (error) {
     console.error(error.message)
     process.exit(1)
