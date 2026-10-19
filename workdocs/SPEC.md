@@ -51,6 +51,7 @@ Cada criterio se escribe como test y falla antes de codear. Fixture: `src/data/i
 12. Con `--out` en un directorio que no existe (por ejemplo `no-existe/x.csv`), el comando sale con código 1, escribe un mensaje legible en stderr (no un stack trace) y no crea la carpeta ni el archivo.
 13. Un cliente que empieza con `=`, `+`, `-`, `@`, tabulación o `\r` sale con `'` al inicio (por ejemplo `'=SUMA(A1)`), y un cliente normal no cambia (test unitario sobre `src/csv.js`).
 14. Con un flag desconocido (por ejemplo `--mes`), el comando sale con código 1, escribe un mensaje legible en stderr (no un stack trace) y no crea ningún archivo.
+15. Un cliente con eñes y tildes (por ejemplo `Compañía Ñuñoa Ltda. — Peñalolén`) escrito con `toCsv` y `writeCsv` deja un archivo que empieza con los bytes `EF BB BF`, guarda `ñ` como `C3 B1` y `Ñ` como `C3 91` (UTF-8, no Latin-1), y su fila tiene 5 campos separados por `;` con el cliente intacto. Ticket de origen: `tickets/T-02.md`.
 
 ## Fuera de alcance
 
