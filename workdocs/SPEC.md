@@ -31,6 +31,7 @@ Reglas:
 
 - Por defecto se **excluyen** las facturas `void`: lo seguro es no mandar anuladas al banco. `--include-void` las incluye, para cuando tesorería necesite cuadrar. Decidido en el grill; María lo confirma (ver "Fuera").
 - `--month YYYY-MM` filtra por `issuedAt`. Es opcional: sin el flag se exportan todos los meses. Es válido solo con año de 4 dígitos y mes `01` a `12` (`^\d{4}-(0[1-9]|1[0-2])$`); cualquier otro valor es un error.
+- Una factura cuyo `issuedAt` está ausente (`null` o `undefined`) o no es un string **no pertenece a ningún mes**: `--month` la omite y el resto de la exportación sigue normal. Sin `--month` se exporta igual, con la fecha vacía (ver "Formato del archivo"). Un dato malo no puede voltear la exportación completa. **Supuesto:** María lo confirma (ver "Preguntas abiertas").
 - Sin `--out`, el archivo se llama `facturas.csv` y queda en el directorio actual. Con `--out` se escribe en esa ruta, y no se crean carpetas: si el directorio no existe o no se puede escribir, es un error. Si ya existe, se sobrescribe sin avisar (decidido en el grill: para conservar uno anterior está `--out`). **Supuesto:** el ticket dice que el nombre "no quedó fijo".
 
 ## Aceptación observable
@@ -51,6 +52,7 @@ Cada criterio se escribe como test y falla antes de codear. Fixture: `src/data/i
 12. Con `--out` en un directorio que no existe (por ejemplo `no-existe/x.csv`), el comando sale con código 1, escribe un mensaje legible en stderr (no un stack trace) y no crea la carpeta ni el archivo.
 13. Un cliente que empieza con `=`, `+`, `-`, `@`, tabulación o `\r` sale con `'` al inicio (por ejemplo `'=SUMA(A1)`), y un cliente normal no cambia (test unitario sobre `src/csv.js`).
 14. Con un flag desconocido (por ejemplo `--mes`), el comando sale con código 1, escribe un mensaje legible en stderr (no un stack trace) y no crea ningún archivo.
+15. `filterByMonth` omite las facturas sin `issuedAt` usable (`null`, `undefined` o un valor que no es string) y devuelve las del mes pedido, sin lanzar (test unitario sobre `src/month.js`). El fixture no se toca: el test construye sus propias facturas.
 
 ## Fuera de alcance
 
@@ -67,3 +69,4 @@ Preguntas abiertas (responde María, dueña del ticket):
 
 - ¿El Excel de tesorería usa `;` o `,` como separador? Si usa `,`, hay que reabrir `--delimiter`.
 - ¿Las facturas `void` se excluyen por defecto, y en qué casos tesorería las necesita "para cuadrar"? Mientras tanto rige lo del grill: se excluyen, con `--include-void`.
+- Una factura sin `issuedAt`, ¿se omite en silencio del mes filtrado o tesorería necesita verla señalada? Mientras tanto se omite, porque hoy el filtro se cae con un `TypeError` y voltea la exportación entera.
