@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { filterByMonth } from '../src/month.js'
 
-// Criterio 15 de workdocs/SPEC.md: una factura cuyo issuedAt está ausente o no es
+// Criterio 16 de workdocs/SPEC.md: una factura cuyo issuedAt está ausente o no es
 // un string no pertenece a ningún mes. --month la omite y el resto de la
 // exportación sigue normal: un dato malo no puede voltear la exportación completa.
 //
@@ -35,7 +35,7 @@ for (const [nombre, issuedAt] of [
   ['numérico', 1754092800000],
   ['un objeto', {}],
 ]) {
-  test(`criterio 15: issuedAt ${nombre} se omite sin voltear la exportación`, () => {
+  test(`criterio 16: issuedAt ${nombre} se omite sin voltear la exportación`, () => {
     const invoices = [AGOSTO, sinFecha(issuedAt), SEPTIEMBRE]
 
     // Lo que importa no es solo que F-1005 quede fuera: es que F-1001, que sí tiene
@@ -49,7 +49,7 @@ for (const [nombre, issuedAt] of [
   })
 }
 
-test('criterio 15: un issuedAt string sigue filtrando igual que antes', () => {
+test('criterio 16: un issuedAt string sigue filtrando igual que antes', () => {
   const invoices = [AGOSTO, SEPTIEMBRE, sinFecha('')]
 
   assert.deepEqual(
