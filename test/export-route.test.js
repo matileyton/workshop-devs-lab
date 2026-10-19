@@ -1,7 +1,13 @@
 import assert from 'node:assert/strict'
+import { cpSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { dirname, join } from 'node:path'
 import { test } from 'node:test'
+import { fileURLToPath, pathToFileURL } from 'node:url'
 import { buildExport } from '../src/export.js'
 import { withServer } from '../test-support/start-server.js'
+
+const srcPath = join(dirname(fileURLToPath(import.meta.url)), '..', 'src')
 
 const BOM = '﻿'
 const NO_STACK = /\bat\s+\S+.*:\d+:\d+/
@@ -59,7 +65,7 @@ test('P13: sin filtro de estado ni includeVoid, F-1003 (void) no aparece', () =>
   }))
 
 // P14
-for (const query of ['?status=pagada', '?month=2026-13', '?includeVoid=quizás']) {
+for (const query of ['?status=pagada', '?month=2026-13', '?includeVoid=quizás', '?status=paid&includeVoid=quizás']) {
   test(`P14: ${query} responde 400 JSON sin Content-Disposition`, () =>
     withServer(async (baseUrl) => {
       const res = await fetch(`${baseUrl}/api/export.csv${query}`)
@@ -81,6 +87,7 @@ for (const [query, expected] of [
   ['?includeVoid=false', ['F-1001', 'F-1002', 'F-1004']],
   ['?includeVoid=', ['F-1001', 'F-1002', 'F-1004']],
   ['?status=paid&includeVoid=true', ['F-1001']],
+  ['?status=void&includeVoid=true', ['F-1003']],
 ]) {
   test(`P16: ${query} trae ${expected.join(', ')}`, () =>
     withServer(async (baseUrl) => {
@@ -88,4 +95,43 @@ for (const [query, expected] of [
       assertCsvResponse(res)
       assert.deepEqual(csvIds(text), expected)
     }))
+}
+
+// Levanta el servidor de una copia de src/ con datos propios (el fixture real no se toca).
+async function withServerOnData(invoices, fn) {
+  const root = mkdtempSync(join(tmpdir(), 'export-route-'))
+  cpSync(srcPath, join(root, 'src'), { recursive: true })
+  writeFileSync(join(root, 'src', 'data', 'invoices.json'), JSON.stringify(invoices))
+  const { createApp } = await import(pathToFileURL(join(root, 'src', 'server.js')).href)
+  const server = createApp()
+  await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve))
+  try {
+    return await fn(`http://127.0.0.1:${server.address().port}`)
+  } finally {
+    await new Promise((resolve) => {
+      server.close(resolve)
+      server.closeAllConnections()
+    })
+    rmSync(root, { recursive: true, force: true })
+  }
+}
+
+// PLAN, story 3, paso 2: un error de toCsv (monto inválido) responde 500 con JSON legible.
+for (const query of ['', '?status=open']) {
+  test(`un monto inválido en /api/export.csv${query} responde 500 JSON sin stack y el servidor sigue vivo`, (t) => {
+    t.mock.method(console, 'error', () => {})
+    const invoices = [{ id: 'F-2001', client: 'Acme', issuedAt: '2026-08-05', amount: '1.250.000', status: 'open' }]
+    return withServerOnData(invoices, async (baseUrl) => {
+      const res = await fetch(`${baseUrl}/api/export.csv${query}`)
+      assert.equal(res.status, 500)
+      assert.match(res.headers.get('content-type'), /^application\/json/)
+      assert.equal(res.headers.get('content-disposition'), null)
+      const body = await res.json()
+      assert.deepEqual(Object.keys(body), ['error'])
+      assert.ok(body.error.length > 0, 'el mensaje de error no puede estar vacío')
+      assert.doesNotMatch(body.error, NO_STACK)
+      const next = await fetch(`${baseUrl}/api/invoices`)
+      assert.equal(next.status, 200)
+    })
+  })
 }
