@@ -60,6 +60,24 @@ Convención de tests: cada story escribe su propio archivo en `test/` (no editan
 
 **Test de aceptación (falla antes de codear):** `test/export-out.test.js`, criterios 3, 8 y 12. Ejemplo: `--out no-existe/x.csv` sale con código 1, con mensaje legible en stderr, sin crear la carpeta ni el archivo.
 
+### Story 4: `feat/T-01-story-4`
+
+**Persona:** Matías Leyton (`matileyton`).
+
+**Hallazgo (caso que María no dijo):** una factura con `amount` ausente, `null`, `NaN` o escrito como texto (`"1.250.000"`) pasa al CSV sin error. Con `toCsv` de hoy salen `F-2001;Acme;2026-08-05;;open`, `...;NaN;paid` y `...;1.250.000;open`: al banco llega una fila sin monto, con `NaN` o con un monto que no es número. Eso rompe lo que dice la SPEC (monto como entero) y el dolor original del ticket (filas que no deberían ir).
+
+**Qué entra:** `toCsv` valida el monto de cada factura. Si no es un número finito, falla con un error que nombra el id de la factura. El comando sale con código 1, mensaje legible en stderr y sin crear archivo.
+
+**Diseño técnico (qué toca, contratos, orden):**
+
+1. En `src/csv.js`, validar `Number.isFinite(invoice.amount)` (y que sea de tipo `number`) antes de armar cada fila. Si falla, lanzar `Error` con el id: `factura <id>: monto inválido (<valor>)`.
+2. `src/cli.js` no cambia: ya captura el error de `buildExport`, lo imprime y sale con 1. `buildExport` se evalúa antes de `writeCsv`, así que no queda archivo.
+3. Tests en `test/export-monto.test.js`: unitarios sobre `toCsv` y un caso de CLI sobre una copia temporal de `src/` con un JSON de datos malos, sin tocar `src/data/invoices.json`.
+
+**Contratos que cambian:** `toCsv(invoices)` ahora lanza si un monto no es un número finito. El comando `export-csv` agrega un caso de error (código 1). El formato del CSV válido no cambia.
+
+**Test de aceptación (falla antes de codear):** `test/export-monto.test.js`, criterio 17. Ejemplo: una factura con `amount: null` hace que `export-csv` salga con código 1, nombre el id en stderr y no cree `facturas.csv`.
+
 ### T-02 Story 1: `feat/T-02-story-1`
 
 **Persona:** Juan.
@@ -142,3 +160,4 @@ Diseño común: `src/server.js` (story 1) arma un servidor `node:http` con una t
 1. Story 1 va primero: crea `src/csv.js`, `src/export.js` y el comando en `src/cli.js`. Las otras dos parten de `main` después de su merge.
 2. Story 2 y story 3 no comparten archivos nuevos ni de test, pero las dos editan `src/export.js` y `src/cli.js` en bloques distintos. Van en este orden: story 2, luego story 3. Quien mergea segundo resuelve el conflicto de esos dos archivos.
 3. Mientras story 1 no esté en `main`, las stories 2 y 3 pueden escribir su test rojo, pero no su código.
+4. Story 4 parte de `main` con las 3 stories mergeadas. Toca `src/csv.js` (no lo editan las demás) y agrega su propio test. No hay conflicto con otras stories.
