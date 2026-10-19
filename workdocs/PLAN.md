@@ -78,6 +78,65 @@ Convención de tests: cada story escribe su propio archivo en `test/` (no editan
 
 **Test de aceptación:** `test/export-encoding.test.js`, criterio 15.
 
+## T-02-panel: Panel de facturas
+
+Ticket: `tickets/T-02-panel.md`. Spec: sección "T-02-panel" de `workdocs/SPEC.md` (criterios `P1` a `P15`). Ramas `feat/T-02-panel-story-<n>`, un worktree y un PR por persona. Las tres stories parten de `main`.
+
+Diseño común: `src/server.js` (story 1) arma un servidor `node:http` con una tabla de rutas. Los handlers tienen la firma `(req, res, url) => void`. Para que las stories 2 y 3 no editen los mismos archivos, la story 1 deja registrados los tres handlers, y los de las stories 2 y 3 nacen como stubs que responden `501`. Cada story reemplaza solo su archivo. Los tests de servidor usan el helper `test-support/start-server.js` (puerto `0`), que crea la story 1.
+
+### T-02-panel Story 1: `feat/T-02-panel-story-1` (API)
+
+**Persona:** Matías Leyton (`matileyton`).
+
+**Qué entra:** El servidor, `GET /api/invoices` con filtros, los errores 400, 404 y 405, y los stubs de las otras dos rutas. Cubre P1 a P7.
+
+**Diseño técnico (qué toca, contratos, orden):**
+
+1. Crear `src/filters.js` con `parseFilters(searchParams)` (devuelve `{ status, month }`, trata el vacío como sin filtro y lanza un error con mensaje legible si `status` no es `paid|open|void` o el mes no pasa `isValidMonth`) y `filterInvoices(invoices, { status, month })`.
+2. Crear `src/server.js` con `createApp()` (devuelve el `http.Server`), la tabla de rutas y las respuestas 404, 405 y 400 en JSON. Solo arranca `listen` en `PORT` (por defecto `3000`) si se ejecuta directo con `node src/server.js`. Agregar el script `start` a `package.json`.
+3. Crear los stubs `src/page.js` (`handlePage`) y `src/export-route.js` (`handleExport`), que responden `501`, y el helper `test-support/start-server.js`.
+
+**Contratos que cambian:** endpoint nuevo `GET /api/invoices?status=&month=`; módulos `parseFilters`, `filterInvoices` y `createApp`; script `npm start`. Las stories 2 y 3 importan `parseFilters` y `filterInvoices`.
+
+**Test de aceptación (falla antes de codear):** `test/api.test.js`, criterios P1 a P7. Ejemplo: `fetch('/api/invoices?status=open&month=2026-09')` devuelve solo F-1004.
+
+### T-02-panel Story 2: `feat/T-02-panel-story-2` (Página)
+
+**Persona:** Antonia Urrutia.
+
+**Qué entra:** El HTML de `GET /` con tabla, filtros, total y botón de descarga, más la función `computeTotal`. Cubre P8 a P10.
+
+**Diseño técnico (qué toca, contratos, orden):**
+
+1. En `src/page.js`, exportar `computeTotal(invoices)` y `renderPage()` (string HTML con el JS en línea). El script incrusta el código de `computeTotal` con `computeTotal.toString()`, así el test y la página usan la misma función.
+2. El JS de la página llama a `fetch('/api/invoices?status=&month=')`, rellena la tabla y el total, y arma el enlace del botón hacia `/api/export.csv` con los mismos filtros. Las etiquetas pagada, abierta y anulada se mapean a `paid`, `open` y `void` solo en la página.
+3. Reemplazar el stub `handlePage` para responder 200 con `text/html; charset=utf-8`. No tocar `src/server.js`.
+
+**Contratos que cambian:** `GET /` deja de responder 501; módulo `computeTotal(invoices) -> number`.
+
+**Test de aceptación (falla antes de codear):** `test/page.test.js`, criterios P8 a P10. Ejemplo: `computeTotal` de las 4 facturas del fixture da `4690000`.
+
+### T-02-panel Story 3: `feat/T-02-panel-story-3` (Descarga)
+
+**Persona:** Juan.
+
+**Qué entra:** `GET /api/export.csv` con los filtros, reutilizando el export de T-01. Cubre P11 a P14.
+
+**Diseño técnico (qué toca, contratos, orden):**
+
+1. En `src/export-route.js`, reemplazar el stub `handleExport`: usar `parseFilters` (400 JSON si es inválido) y armar el CSV. Con `status` usa `toCsv(filterInvoices(listInvoices(), { status, month }))`; sin `status` usa `buildExport({ month })` para mantener la regla de T-01 (sin anuladas).
+2. Responder con `Content-Type: text/csv; charset=utf-8` y `Content-Disposition: attachment; filename="facturas.csv"`. Un error de `toCsv` (monto inválido) responde 500 con JSON legible, sin stack trace.
+3. No tocar `src/server.js` ni `src/csv.js`.
+
+**Contratos que cambian:** `GET /api/export.csv?status=&month=` deja de responder 501. El formato del CSV no cambia.
+
+**Test de aceptación (falla antes de codear):** `test/export-route.test.js`, criterios P11 a P14. Ejemplo: `?status=void` devuelve un CSV con F-1003 y sin las demás.
+
+### Orden (T-02-panel)
+
+1. Story 1 va primero: deja el servidor, los filtros, los stubs y el helper de tests. Las stories 2 y 3 parten de `main` después de su merge, y mientras tanto pueden escribir su test rojo.
+2. Las stories 2 y 3 son independientes: cada una edita solo su archivo (`src/page.js` o `src/export-route.js`) y su test. Pueden mergear en cualquier orden. El único archivo compartido es `workdocs/status.md`, donde cada persona edita solo su fila.
+
 ## Orden
 
 1. Story 1 va primero: crea `src/csv.js`, `src/export.js` y el comando en `src/cli.js`. Las otras dos parten de `main` después de su merge.
