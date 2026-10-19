@@ -98,7 +98,7 @@ Convención de tests: cada story escribe su propio archivo en `test/` (no editan
 
 ## T-02-panel: Panel de facturas
 
-Ticket: `tickets/T-02-panel.md`. Spec: sección "T-02-panel" de `workdocs/SPEC.md` (criterios `P1` a `P20`). Ramas `feat/T-02-panel-story-<n>`, un worktree y un PR por persona. Las tres stories parten de `main`.
+Ticket: `tickets/T-02-panel.md`. Spec: sección "T-02-panel" de `workdocs/SPEC.md` (criterios `P1` a `P24`). Ramas `feat/T-02-panel-story-<n>`, un worktree y un PR por persona. Las tres stories parten de `main`.
 
 Diseño común: `src/server.js` (story 1) arma un servidor `node:http` con una tabla de rutas. Los handlers tienen la firma `(req, res, url) => void`. Para que las stories 2 y 3 no editen los mismos archivos, la story 1 deja registrados los tres handlers, y los de las stories 2 y 3 nacen como stubs que responden `501`. Cada story reemplaza solo su archivo. Los tests de servidor usan el helper `test-support/start-server.js` (puerto `0`), que crea la story 1.
 
@@ -149,6 +149,22 @@ Diseño común: `src/server.js` (story 1) arma un servidor `node:http` con una t
 **Contratos que cambian:** `GET /api/export.csv?status=&month=&includeVoid=` deja de responder 501. El formato del CSV no cambia.
 
 **Test de aceptación (falla antes de codear):** `test/export-route.test.js`, criterios P11 a P14 y P16. Ejemplo: `?status=void` devuelve un CSV con F-1003 y sin las demás.
+
+### T-02-panel Diseño: `feat/T-02-panel-diseno` (extra, tras las 3 stories)
+
+**Persona:** Matías Leyton (`matileyton`).
+
+**Qué entra:** El diseño de la página: cordillera de facturas (un pico por factura, altura = monto), cumbre con el total que cuenta hasta su valor, paleta del altiplano y modo oscuro. Cubre P21 a P24.
+
+**Diseño técnico (qué toca, contratos, orden):**
+
+1. En `src/page.js`, agregar `renderCordillera(invoices)` e `interpolar(desde, hasta, t)` (puras, exportadas e incrustadas con `.toString()`), `data-id` y `data-estado` en `renderRows`, y reescribir el `<style>` y el HTML de `renderPage()`.
+2. Mantener sin cambios lo que fijan P8 a P18: ids `estado`, `mes`, `anuladas`, `total`, `error`, `descargar`; `cargar()` con `turnos.pedir()` antes del `fetch`; sin recursos externos.
+3. Solo se toca `src/page.js` y un test nuevo, `test/page-diseno.test.js`.
+
+**Contratos que cambian:** exports nuevos `renderCordillera` e `interpolar`; las filas de la tabla ganan dos atributos `data-*`. La API y el CSV no cambian.
+
+**Test de aceptación (falla antes de codear):** `test/page-diseno.test.js`, criterios P21 a P24.
 
 ### Orden (T-02-panel)
 

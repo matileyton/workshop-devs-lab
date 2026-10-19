@@ -78,7 +78,7 @@ Preguntas abiertas (responde María, dueña del ticket):
 
 ## T-02-panel: Panel de facturas para María
 
-Ticket de origen: `tickets/T-02-panel.md`. Dueña de las dudas: María (tesorería, Andes Lab). Los criterios de esta sección se numeran `P1` a `P20` para no chocar con los de T-01 y T-02.
+Ticket de origen: `tickets/T-02-panel.md`. Dueña de las dudas: María (tesorería, Andes Lab). Los criterios de esta sección se numeran `P1` a `P24` para no chocar con los de T-01 y T-02.
 
 ### Problema
 
@@ -136,6 +136,13 @@ Casilla de anuladas (stories 3 y 2):
 
 P16. `GET /api/export.csv?includeVoid=true` trae las 4 facturas, incluida F-1003; `?includeVoid=true&month=2026-09` trae F-1003 y F-1004; `?includeVoid=false` equivale a no mandarlo (sin F-1003); y `?status=paid&includeVoid=true` trae solo F-1001.
 P17. `buildExportUrl({ status, month, includeVoid })` en `src/page.js` devuelve `/api/export.csv` con solo los filtros que no están vacíos, y agrega `includeVoid=true` solo cuando `includeVoid` es verdadero. Por ejemplo, `{ status: '', month: '2026-08', includeVoid: false }` da `/api/export.csv?month=2026-08` (test unitario).
+
+Diseño de la página (extra, rama `feat/T-02-panel-diseno`; no cambia P8 a P18):
+
+P21. `renderPage()` declara `lang="es"` y `<meta name="viewport">`, trae su estilo en un bloque `<style>` en línea, muestra el foco del teclado (`:focus-visible`), desactiva las animaciones con `@media (prefers-reduced-motion: reduce)` y trae un contenedor `id="cordillera"` para el gráfico. Sigue sin cargar nada externo (P10).
+P22. `renderCordillera(invoices)` en `src/page.js` devuelve `''` para `[]` y, para cada factura, un pico SVG (`<g class="pico pico-<estado>" data-id="<id>" data-altura="<n>">`) con un `<title>` legible. La altura es proporcional al monto: la factura de mayor monto mide `180` y las demás `round(monto / mayor * 180)`, con mínimo `8` (F-1003 mide `180` y F-1004 mide `39`). La clase es `pico-pagada`, `pico-abierta` o `pico-anulada`. Un cliente con `<script>` sale escapado en el `<title>` (test unitario). La función incrustada en el HTML es la misma que prueba el test.
+P23. Cada fila que arma `renderRows` trae `data-id="<id>"` y `data-estado="<etiqueta>"` (pagada, abierta o anulada, nunca el valor del JSON) para enlazarla con su pico; el contenido de las 5 celdas no cambia (P18) y el id sale escapado.
+P24. `interpolar(desde, hasta, t)` en `src/page.js` devuelve un entero: `desde` con `t=0`, `hasta` con `t=1`, nunca baja cuando `t` sube (si `hasta > desde`) y funciona al revés (test unitario). Anima el total de la cumbre y se incrusta en el HTML. `formatearPesos(n)` devuelve el entero con punto como separador de miles (`4690000` da `'4.690.000'`, `0` da `'0'`) y solo se usa en el número grande de la cumbre: las celdas de la tabla siguen con el monto sin formato (P18).
 
 General:
 
