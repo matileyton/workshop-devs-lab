@@ -3,7 +3,10 @@
 export async function startServer() {
   const { createApp } = await import('../src/server.js')
   const server = createApp()
-  await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve))
+  await new Promise((resolve, reject) => {
+    server.once('error', reject)
+    server.listen(0, '127.0.0.1', resolve)
+  })
   const { port } = server.address()
   return {
     baseUrl: `http://127.0.0.1:${port}`,
