@@ -33,25 +33,25 @@ const invalidAmounts = [
   ['texto con puntos', { amount: '1.250.000' }],
 ]
 
-// Criterio 15, unitario sobre src/csv.js: el error nombra la factura y habla del monto.
+// Criterio 17, unitario sobre src/csv.js: el error nombra la factura y habla del monto.
 for (const [label, overrides] of invalidAmounts) {
-  test(`criterio 15: toCsv rechaza un monto ${label} y nombra la factura`, () => {
+  test(`criterio 17: toCsv rechaza un monto ${label} y nombra la factura`, () => {
     assert.throws(() => toCsv([invoice(overrides)]), (error) => /F-2001/.test(error.message) && /monto/i.test(error.message))
   })
 }
 
-test('criterio 15: un monto 0 sigue siendo válido', () => {
+test('criterio 17: un monto 0 sigue siendo válido', () => {
   assert.match(toCsv([invoice({ amount: 0 })]), /F-2001;Acme;2026-08-05;0;open\r\n/)
 })
 
-// Criterio 15, por CLI: sale con 1, mensaje legible, sin stack trace y sin archivo.
+// Criterio 17, por CLI: sale con 1, mensaje legible, sin stack trace y sin archivo.
 // JSON no tiene NaN ni undefined: NaN se manda como texto y "ausente" omitiendo la clave.
 for (const [label, overrides] of [
   ['null', { amount: null }],
   ['ausente', {}],
   ['texto con puntos', { amount: '1.250.000' }],
 ]) {
-  test(`criterio 15: export-csv con monto ${label} sale con 1 y no crea archivo`, () => {
+  test(`criterio 17: export-csv con monto ${label} sale con 1 y no crea archivo`, () => {
     const data = invoice(overrides)
     if (label === 'ausente') delete data.amount
     const { status, stderr, cwd } = runWithData([data])
@@ -63,7 +63,7 @@ for (const [label, overrides] of [
   })
 }
 
-test('criterio 15: export-csv con monto 0 exporta y sale con 0', () => {
+test('criterio 17: export-csv con monto 0 exporta y sale con 0', () => {
   const { status, stderr, cwd } = runWithData([invoice({ amount: 0 })])
   assert.equal(status, 0, stderr)
   assert.equal(existsSync(join(cwd, 'facturas.csv')), true)

@@ -76,7 +76,25 @@ Convención de tests: cada story escribe su propio archivo en `test/` (no editan
 
 **Contratos que cambian:** `toCsv(invoices)` ahora lanza si un monto no es un número finito. El comando `export-csv` agrega un caso de error (código 1). El formato del CSV válido no cambia.
 
-**Test de aceptación (falla antes de codear):** `test/export-monto.test.js`, criterio 15. Ejemplo: una factura con `amount: null` hace que `export-csv` salga con código 1, nombre el id en stderr y no cree `facturas.csv`.
+**Test de aceptación (falla antes de codear):** `test/export-monto.test.js`, criterio 17. Ejemplo: una factura con `amount: null` hace que `export-csv` salga con código 1, nombre el id en stderr y no cree `facturas.csv`.
+
+### T-02 Story 1: `feat/T-02-story-1`
+
+**Persona:** Juan.
+
+**Ticket:** `tickets/T-02.md`.
+
+**Qué entra:** Un test de aceptación que cubre eñes y tildes en el CSV, con UTF-8 con BOM y separador `;`. No cambia el formato del archivo.
+
+**Diseño técnico (qué toca, contratos, orden):**
+
+1. Crear `test/export-encoding.test.js`: arma una factura en el propio test con cliente `Compañía Ñuñoa Ltda. — Peñalolén` (sin tocar `src/data/invoices.json`), la pasa por `toCsv` (`src/csv.js`) y la escribe con `writeCsv` (`src/output.js`) en un directorio temporal (`fs.mkdtempSync`).
+2. Leer el archivo como `Buffer` y asertar: los 3 primeros bytes son `EF BB BF`; contiene los bytes `C3 B1` (`ñ`) y `C3 91` (`Ñ`); decodificado en UTF-8, la fila de datos tiene 5 campos al separar por `;` y el segundo es el cliente exacto.
+3. Si el test falla, el arreglo va en `src/csv.js` o `src/output.js` (por ejemplo, fijar `'utf8'` en `writeFileSync`). Si pasa sin cambios de código, se anota en `status.md` como test de caracterización, no como rojo.
+
+**Contratos que cambian:** ninguno.
+
+**Test de aceptación:** `test/export-encoding.test.js`, criterio 15.
 
 ## Orden
 
