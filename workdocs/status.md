@@ -66,3 +66,4 @@ Una tarea acotada y su resumen. Si hubo implementación y falta esta línea, M4 
 
 - T-01-story-2 (Antonia Urrutia): https://github.com/matileyton/workshop-devs-lab/pull/6 — draft, solo el test rojo.
 - T-02-panel-story-2 (Antonia Urrutia): https://github.com/matileyton/workshop-devs-lab/pull/13 — listo para review (review pedida a matileyton), verde en 83/83 con story 3 ya en `main`. Sin merge: lo decide un humano.
+- T-02-panel-story-3 (Juan): https://github.com/matileyton/workshop-devs-lab/pull/14 — draft. El test rojo y `handleExport` ya están en `main` (`f91ac93`, `71e9cce`); el PR trae el test del 500, los casos de la review y la bitácora.
