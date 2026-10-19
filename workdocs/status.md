@@ -44,10 +44,15 @@ Una tarea acotada y su resumen. Si hubo implementación y falta esta línea, M4 
 
 ## Día 3
 
-**Mergeó:**
+**Mergeó:** las 3 stories de T-01, en el orden del plan (story 1, story 2, story 3). Merges hechos por `matileyton` el 2026-10-15. `npm test` en `main` tras el último merge: tests 21, pass 21, fail 0.
 
 **Quedó fuera (gap, no vendido como merge):**
 
+- Tablas "Roles" y "Grill" de este archivo: siguen vacías. Falta que cada persona anote al menos 2 roles y que se registre el grill de `SPEC.md`.
+- PR #2 (`docs/T-01-spec-juan`, spec grillada) sigue en draft y PR #1 (`practica/matiasleyton`) sigue abierto: ninguno es parte de T-01. Hay que decidir si se cierran.
+
 **PRs:**
 
-- T-01-story-2 (Antonia Urrutia): https://github.com/matileyton/workshop-devs-lab/pull/6 — draft, solo el test rojo.
+- T-01-story-1 (Matías Leyton): https://github.com/matileyton/workshop-devs-lab/pull/5 — mergeado el 2026-10-15.
+- T-01-story-2 (Antonia Urrutia): https://github.com/matileyton/workshop-devs-lab/pull/6 — mergeado el 2026-10-15.
+- T-01-story-3 (Juan): https://github.com/matileyton/workshop-devs-lab/pull/7 — mergeado el 2026-10-15.
