@@ -54,6 +54,7 @@ Cada criterio se escribe como test y falla antes de codear. Fixture: `src/data/i
 14. Con un flag desconocido (por ejemplo `--mes`), el comando sale con código 1, escribe un mensaje legible en stderr (no un stack trace) y no crea ningún archivo.
 15. Un cliente con eñes y tildes (por ejemplo `Compañía Ñuñoa Ltda. — Peñalolén`) escrito con `toCsv` y `writeCsv` deja un archivo que empieza con los bytes `EF BB BF`, guarda `ñ` como `C3 B1` y `Ñ` como `C3 91` (UTF-8, no Latin-1), y su fila tiene 5 campos separados por `;` con el cliente intacto. Ticket de origen: `tickets/T-02.md`.
 16. `filterByMonth` omite las facturas sin `issuedAt` usable (`null`, `undefined` o un valor que no es string) y devuelve las del mes pedido, sin lanzar (test unitario sobre `src/month.js`). El fixture no se toca: el test construye sus propias facturas. Ticket de origen: `tickets/T-01.md`.
+17. Una factura con `amount` ausente, `null`, `NaN` o escrito como texto (por ejemplo `"1.250.000"`) no llega al CSV: `toCsv` lanza un error que nombra el id de la factura, y `export-csv` sale con código 1, escribe un mensaje legible en stderr (no un stack trace) y no crea ningún archivo. Un monto `0` sigue siendo válido.
 
 ## Fuera de alcance
 
@@ -77,7 +78,7 @@ Preguntas abiertas (responde María, dueña del ticket):
 
 ## T-02-panel: Panel de facturas para María
 
-Ticket de origen: `tickets/T-02-panel.md`. Dueña de las dudas: María (tesorería, Andes Lab). Los criterios de esta sección se numeran `P1` a `P18` para no chocar con los de T-01 y T-02.
+Ticket de origen: `tickets/T-02-panel.md`. Dueña de las dudas: María (tesorería, Andes Lab). Los criterios de esta sección se numeran `P1` a `P20` para no chocar con los de T-01 y T-02.
 
 ### Problema
 
@@ -113,7 +114,9 @@ P3. `?month=2026-08` devuelve solo F-1001 y F-1002.
 P4. `?status=open&month=2026-09` devuelve solo F-1004.
 P5. `?status=&month=` (vacíos) devuelve las 4 facturas, igual que sin filtros.
 P6. `?status=pagada` o `?month=2026-13` responde 400 con JSON `{ "error": "<mensaje legible>" }` y sin stack trace.
-P7. Una ruta desconocida responde 404 con JSON `{ "error": ... }`, y un método distinto de `GET` responde 405.
+P7. Una ruta desconocida responde 404 con JSON `{ "error": ... }`, y un método distinto de `GET` responde 405 (en una ruta conocida; la ruta se revisa antes que el método).
+P19. Una URL malformada (por ejemplo la ruta `//` enviada tal cual) responde 400 con JSON `{ "error": ... }` y el servidor sigue respondiendo a las peticiones siguientes (no se cae el proceso).
+P20. El servidor escucha solo en `127.0.0.1` (no en todas las interfaces) y responde 403 con JSON `{ "error": ... }` a toda petición cuyo `Host` no sea `localhost`, `127.0.0.1` o `[::1]` (con cualquier puerto), para que otra página web no pueda leer las facturas por DNS rebinding.
 
 Página (story 2):
 
