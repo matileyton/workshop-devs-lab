@@ -39,7 +39,8 @@ for (const [nombre, issuedAt] of [
     const invoices = [AGOSTO, sinFecha(issuedAt), SEPTIEMBRE]
 
     // Lo que importa no es solo que F-1005 quede fuera: es que F-1001, que sí tiene
-    // fecha de agosto, siga saliendo. Hoy filterByMonth lanza y se pierden las dos.
+    // fecha de agosto, siga saliendo. Antes del arreglo filterByMonth lanzaba y se
+    // perdían las dos.
     const filtradas = filterByMonth(invoices, '2026-08')
 
     assert.deepEqual(
