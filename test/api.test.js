@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict'
+import { request } from 'node:http'
 import { test } from 'node:test'
 import { listInvoices } from '../src/invoices.js'
 import { withServer } from '../test-support/start-server.js'
@@ -122,3 +123,55 @@ for (const method of ['POST', 'PUT', 'DELETE']) {
       assertJsonError(res, body)
     }))
 }
+
+// P19: una URL malformada no tumba el servidor. fetch normaliza la ruta, así que se usa node:http.
+function rawRequest(baseUrl, { path = '/', headers = {} } = {}) {
+  const { hostname, port } = new URL(baseUrl)
+  return new Promise((resolve, reject) => {
+    const req = request({ hostname, port, path, headers }, (res) => {
+      let text = ''
+      res.on('data', (chunk) => (text += chunk))
+      res.on('end', () => resolve({ status: res.statusCode, headers: res.headers, text }))
+    })
+    req.on('error', reject)
+    req.end()
+  })
+}
+
+test('P19: la ruta // responde 400 con JSON y el servidor sigue vivo', () =>
+  withServer(async (baseUrl) => {
+    const bad = await rawRequest(baseUrl, { path: '//' })
+    assert.equal(bad.status, 400)
+    assertJsonError({ headers: { get: (name) => bad.headers[name] } }, JSON.parse(bad.text))
+    const { res } = await get(baseUrl, '/api/invoices')
+    assert.equal(res.status, 200)
+  }))
+
+// P20: solo loopback y solo con Host local
+test('P20: un Host que no es local responde 403 con JSON', () =>
+  withServer(async (baseUrl) => {
+    const bad = await rawRequest(baseUrl, { path: '/api/invoices', headers: { Host: 'evil.example.com' } })
+    assert.equal(bad.status, 403)
+    assert.match(bad.headers['content-type'], /^application\/json/)
+    assert.equal(typeof JSON.parse(bad.text).error, 'string')
+  }))
+
+for (const host of ['localhost', 'localhost:3000', '127.0.0.1:8080', '[::1]:3000']) {
+  test(`P20: el Host ${host} sí se acepta`, () =>
+    withServer(async (baseUrl) => {
+      const ok = await rawRequest(baseUrl, { path: '/api/invoices', headers: { Host: host } })
+      assert.equal(ok.status, 200)
+    }))
+}
+
+test('P20: startApp escucha solo en 127.0.0.1', async () => {
+  const { startApp } = await import('../src/server.js')
+  const server = startApp(0)
+  await new Promise((resolve) => server.once('listening', resolve))
+  try {
+    assert.equal(server.address().address, '127.0.0.1')
+  } finally {
+    server.closeAllConnections()
+    await new Promise((resolve) => server.close(resolve))
+  }
+})
