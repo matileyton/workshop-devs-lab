@@ -1,8 +1,8 @@
-import { writeFileSync } from 'node:fs'
 import { parseArgs } from 'node:util'
 import { buildExport } from './export.js'
 import { getInvoice, listInvoices } from './invoices.js'
 import { isValidMonth } from './month.js'
+import { writeCsv } from './output.js'
 
 function printInvoice(invoice) {
   console.log(
@@ -34,7 +34,6 @@ if (command === 'get') {
 }
 
 if (command === 'export-csv') {
-  // --include-void y --out están declarados para la story 3; aún no se usan.
   let parsed
   try {
     parsed = parseArgs({
@@ -54,7 +53,15 @@ if (command === 'export-csv') {
     console.error(`invalid --month: ${values.month} (expected YYYY-MM, e.g. 2026-08)`)
     process.exit(1)
   }
-  writeFileSync('facturas.csv', buildExport({ month: values.month }))
+  try {
+    writeCsv(
+      values.out ?? 'facturas.csv',
+      buildExport({ month: values.month, includeVoid: values['include-void'] }),
+    )
+  } catch (error) {
+    console.error(error.message)
+    process.exit(1)
+  }
   process.exit(0)
 }
 
