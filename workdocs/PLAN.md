@@ -98,7 +98,7 @@ Convención de tests: cada story escribe su propio archivo en `test/` (no editan
 
 ## T-02-panel: Panel de facturas
 
-Ticket: `tickets/T-02-panel.md`. Spec: sección "T-02-panel" de `workdocs/SPEC.md` (criterios `P1` a `P18`). Ramas `feat/T-02-panel-story-<n>`, un worktree y un PR por persona. Las tres stories parten de `main`.
+Ticket: `tickets/T-02-panel.md`. Spec: sección "T-02-panel" de `workdocs/SPEC.md` (criterios `P1` a `P20`). Ramas `feat/T-02-panel-story-<n>`, un worktree y un PR por persona. Las tres stories parten de `main`.
 
 Diseño común: `src/server.js` (story 1) arma un servidor `node:http` con una tabla de rutas. Los handlers tienen la firma `(req, res, url) => void`. Para que las stories 2 y 3 no editen los mismos archivos, la story 1 deja registrados los tres handlers, y los de las stories 2 y 3 nacen como stubs que responden `501`. Cada story reemplaza solo su archivo. Los tests de servidor usan el helper `test-support/start-server.js` (puerto `0`), que crea la story 1.
 
@@ -106,7 +106,7 @@ Diseño común: `src/server.js` (story 1) arma un servidor `node:http` con una t
 
 **Persona:** Matías Leyton (`matileyton`).
 
-**Qué entra:** El servidor, `GET /api/invoices` con filtros, los errores 400, 404 y 405, y los stubs de las otras dos rutas. Cubre P1 a P7.
+**Qué entra:** El servidor, `GET /api/invoices` con filtros, los errores 400, 404 y 405, y los stubs de las otras dos rutas. Cubre P1 a P7, P19 y P20 (URL malformada y solo loopback).
 
 **Diseño técnico (qué toca, contratos, orden):**
 
@@ -116,7 +116,7 @@ Diseño común: `src/server.js` (story 1) arma un servidor `node:http` con una t
 
 **Contratos que cambian:** endpoint nuevo `GET /api/invoices?status=&month=`; módulos `parseFilters`, `filterInvoices` y `createApp`; script `npm start`. Las stories 2 y 3 importan `parseFilters` y `filterInvoices`.
 
-**Test de aceptación (falla antes de codear):** `test/api.test.js`, criterios P1 a P7. Ejemplo: `fetch('/api/invoices?status=open&month=2026-09')` devuelve solo F-1004.
+**Test de aceptación (falla antes de codear):** `test/api.test.js`, criterios P1 a P7, P19 y P20. Ejemplo: `fetch('/api/invoices?status=open&month=2026-09')` devuelve solo F-1004.
 
 ### T-02-panel Story 2: `feat/T-02-panel-story-2` (Página)
 

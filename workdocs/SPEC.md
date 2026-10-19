@@ -78,7 +78,7 @@ Preguntas abiertas (responde María, dueña del ticket):
 
 ## T-02-panel: Panel de facturas para María
 
-Ticket de origen: `tickets/T-02-panel.md`. Dueña de las dudas: María (tesorería, Andes Lab). Los criterios de esta sección se numeran `P1` a `P18` para no chocar con los de T-01 y T-02.
+Ticket de origen: `tickets/T-02-panel.md`. Dueña de las dudas: María (tesorería, Andes Lab). Los criterios de esta sección se numeran `P1` a `P20` para no chocar con los de T-01 y T-02.
 
 ### Problema
 
@@ -114,7 +114,9 @@ P3. `?month=2026-08` devuelve solo F-1001 y F-1002.
 P4. `?status=open&month=2026-09` devuelve solo F-1004.
 P5. `?status=&month=` (vacíos) devuelve las 4 facturas, igual que sin filtros.
 P6. `?status=pagada` o `?month=2026-13` responde 400 con JSON `{ "error": "<mensaje legible>" }` y sin stack trace.
-P7. Una ruta desconocida responde 404 con JSON `{ "error": ... }`, y un método distinto de `GET` responde 405.
+P7. Una ruta desconocida responde 404 con JSON `{ "error": ... }`, y un método distinto de `GET` responde 405 (en una ruta conocida; la ruta se revisa antes que el método).
+P19. Una URL malformada (por ejemplo la ruta `//` enviada tal cual) responde 400 con JSON `{ "error": ... }` y el servidor sigue respondiendo a las peticiones siguientes (no se cae el proceso).
+P20. El servidor escucha solo en `127.0.0.1` (no en todas las interfaces) y responde 403 con JSON `{ "error": ... }` a toda petición cuyo `Host` no sea `localhost`, `127.0.0.1` o `[::1]` (con cualquier puerto), para que otra página web no pueda leer las facturas por DNS rebinding.
 
 Página (story 2):
 
