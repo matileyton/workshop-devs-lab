@@ -77,7 +77,7 @@ Preguntas abiertas (responde María, dueña del ticket):
 
 ## T-02-panel: Panel de facturas para María
 
-Ticket de origen: `tickets/T-02-panel.md`. Dueña de las dudas: María (tesorería, Andes Lab). Los criterios de esta sección se numeran `P1` a `P15` para no chocar con los de T-01 y T-02.
+Ticket de origen: `tickets/T-02-panel.md`. Dueña de las dudas: María (tesorería, Andes Lab). Los criterios de esta sección se numeran `P1` a `P18` para no chocar con los de T-01 y T-02.
 
 ### Problema
 
@@ -87,8 +87,8 @@ María revisa las facturas en la terminal (`node src/cli.js list`) antes de mand
 
 - `src/server.js`: servidor con `node:http`, sin dependencias nuevas. Escucha en `http://localhost:3000` (configurable con la variable `PORT`; los tests usan un puerto libre). Se levanta con `node src/server.js` y `npm start`.
 - `GET /api/invoices?status=&month=`: JSON con las facturas filtradas (`src/filters.js`).
-- `GET /`: un solo HTML con su JS en línea (`src/page.js`): tabla con id, cliente, fecha, monto y estado; filtros por estado y por mes; total de lo que se ve; botón "Descargar CSV".
-- `GET /api/export.csv?status=&month=`: el CSV de T-01 con los filtros aplicados (`src/export-route.js`, reutiliza `toCsv` y `buildExport`).
+- `GET /`: un solo HTML con su JS en línea (`src/page.js`; las filas se arman con `renderRows`, que escapa el HTML): tabla con id, cliente, fecha, monto y estado; filtros por estado y por mes; total de lo que se ve; casilla "Incluir anuladas en el CSV" (desmarcada por defecto); botón "Descargar CSV".
+- `GET /api/export.csv?status=&month=`: el CSV de T-01 con los filtros aplicados y, con `includeVoid=true`, con las anuladas incluidas (`src/export-route.js`, reutiliza `toCsv` y `buildExport`).
 - Los datos salen de `src/data/invoices.json` a través de `src/invoices.js`, que no se modifica.
 - Tests en `test/` con `node:test` y `fetch`, levantando el servidor en un puerto libre (puerto `0`).
 
@@ -97,8 +97,9 @@ Reglas y supuestos:
 - En la API el estado se pide con los valores del JSON: `paid`, `open` o `void`. La página los muestra como pagada, abierta y anulada.
 - El mes usa la regla de T-01 (`isValidMonth` de `src/month.js`): `YYYY-MM` con mes `01` a `12`.
 - Un parámetro vacío (`?status=&month=`) equivale a no filtrar.
+- El campo de mes de la página es `<input type="month">`. En navegadores que lo muestran como texto (Firefox de escritorio), el `pattern` y el `placeholder` guían a María. Si la API responde 400, la página muestra el mensaje de `error` en un área propia (`id="error"`) y deja la tabla como estaba.
 - **Supuesto:** la tabla sin filtro de estado muestra todas las facturas, incluidas las anuladas, y el total suma lo que se ve.
-- **Supuesto:** el CSV sin filtro de estado mantiene la regla de T-01 y excluye las `void`. Con `status=void` las incluye.
+- El CSV excluye las `void` por defecto, como en T-01. Con `includeVoid=true` las incluye. `status` manda: con `status=void` salen solo las anuladas, y con `status=paid` solo las pagadas aunque venga `includeVoid=true`. Decidido en el grill: la casilla de la página elige si se descarga con o sin anuladas. `includeVoid` solo se acepta como `true` o `false`; la API de `/api/invoices` lo ignora.
 
 ### Aceptación observable
 
@@ -116,16 +117,22 @@ P7. Una ruta desconocida responde 404 con JSON `{ "error": ... }`, y un método 
 
 Página (story 2):
 
-P8. `GET /` responde 200 con `Content-Type: text/html; charset=utf-8`. El HTML trae una tabla con las columnas id, cliente, fecha, monto y estado, un selector de estado (todos, pagada, abierta, anulada), un campo de mes, el elemento del total y el botón "Descargar CSV".
+P8. `GET /` responde 200 con `Content-Type: text/html; charset=utf-8`. El HTML trae una tabla con las columnas id, cliente, fecha, monto y estado, un selector de estado (todos, pagada, abierta, anulada), un campo de mes (`type="month"`, con `pattern="\d{4}-(0[1-9]|1[0-2])"` y `placeholder="2026-08"`), un área de error (`id="error"`), el elemento del total, la casilla "Incluir anuladas en el CSV" y el botón "Descargar CSV".
 P9. `computeTotal(invoices)` en `src/page.js` suma los `amount`: `[]` da `0`, las 4 facturas del fixture dan `4690000` y solo las pagadas dan `1250000` (test unitario).
 P10. El HTML no carga nada externo: ningún `src` ni `href` que empiece con `http`, y la función `computeTotal` del HTML es la misma que prueba el test.
+P18. `renderRows(invoices)` en `src/page.js` devuelve una fila `<tr>` con 5 celdas (id, cliente, fecha, monto, estado) por factura, y `''` para `[]`. Un cliente con `<script>alert(1)</script>` o `&` sale escapado (`&lt;script&gt;`, `&amp;`) y el resultado no contiene `<script>` (test unitario). La función incrustada en el HTML es la misma que prueba el test.
 
 Descarga (story 3):
 
 P11. `GET /api/export.csv` sin filtros responde 200 con `Content-Type: text/csv; charset=utf-8` y `Content-Disposition: attachment; filename="facturas.csv"`. El cuerpo es idéntico al de `buildExport()` de T-01: BOM, encabezado `id;cliente;fecha;monto;estado` y líneas con `\r\n`.
 P12. Con filtros: `?status=void` trae solo F-1003, `?month=2026-08` trae F-1001 y F-1002, y `?status=open&month=2026-09` trae solo F-1004.
-P13. Sin filtro de estado, F-1003 (`void`) no aparece, como en T-01.
-P14. Con un filtro inválido (`?status=pagada`, `?month=2026-13`) responde 400 con el mismo JSON de P6 y sin `Content-Disposition`.
+P13. Sin filtro de estado y sin `includeVoid`, F-1003 (`void`) no aparece, como en T-01.
+P14. Con un filtro inválido (`?status=pagada`, `?month=2026-13`, `?includeVoid=quizás`) responde 400 con el mismo JSON de P6 y sin `Content-Disposition`.
+
+Casilla de anuladas (stories 3 y 2):
+
+P16. `GET /api/export.csv?includeVoid=true` trae las 4 facturas, incluida F-1003; `?includeVoid=true&month=2026-09` trae F-1003 y F-1004; `?includeVoid=false` equivale a no mandarlo (sin F-1003); y `?status=paid&includeVoid=true` trae solo F-1001.
+P17. `buildExportUrl({ status, month, includeVoid })` en `src/page.js` devuelve `/api/export.csv` con solo los filtros que no están vacíos, y agrega `includeVoid=true` solo cuando `includeVoid` es verdadero. Por ejemplo, `{ status: '', month: '2026-08', includeVoid: false }` da `/api/export.csv?month=2026-08` (test unitario).
 
 General:
 
@@ -142,4 +149,4 @@ P15. `npm test` queda en verde, con los tests de T-01 y T-02 intactos. `node src
 Preguntas abiertas (responde María, dueña del ticket):
 
 - ¿La tabla sin filtro debe mostrar las facturas anuladas y sumarlas al total, o debe ocultarlas?
-- ¿El CSV descargado sin filtro de estado debe excluir las anuladas (como en T-01) aunque la tabla las muestre?
+- ¿La casilla "Incluir anuladas en el CSV" debe venir desmarcada por defecto (como T-01)? Mientras tanto rige lo del grill: desmarcada.

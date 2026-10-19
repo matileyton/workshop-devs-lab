@@ -80,7 +80,7 @@ Convención de tests: cada story escribe su propio archivo en `test/` (no editan
 
 ## T-02-panel: Panel de facturas
 
-Ticket: `tickets/T-02-panel.md`. Spec: sección "T-02-panel" de `workdocs/SPEC.md` (criterios `P1` a `P15`). Ramas `feat/T-02-panel-story-<n>`, un worktree y un PR por persona. Las tres stories parten de `main`.
+Ticket: `tickets/T-02-panel.md`. Spec: sección "T-02-panel" de `workdocs/SPEC.md` (criterios `P1` a `P18`). Ramas `feat/T-02-panel-story-<n>`, un worktree y un PR por persona. Las tres stories parten de `main`.
 
 Diseño común: `src/server.js` (story 1) arma un servidor `node:http` con una tabla de rutas. Los handlers tienen la firma `(req, res, url) => void`. Para que las stories 2 y 3 no editen los mismos archivos, la story 1 deja registrados los tres handlers, y los de las stories 2 y 3 nacen como stubs que responden `501`. Cada story reemplaza solo su archivo. Los tests de servidor usan el helper `test-support/start-server.js` (puerto `0`), que crea la story 1.
 
@@ -104,33 +104,33 @@ Diseño común: `src/server.js` (story 1) arma un servidor `node:http` con una t
 
 **Persona:** Antonia Urrutia.
 
-**Qué entra:** El HTML de `GET /` con tabla, filtros, total y botón de descarga, más la función `computeTotal`. Cubre P8 a P10.
+**Qué entra:** El HTML de `GET /` con tabla, filtros, total y botón de descarga, la casilla "Incluir anuladas en el CSV" y las funciones `computeTotal`, `buildExportUrl` y `renderRows`. Cubre P8 a P10, P17 y P18.
 
 **Diseño técnico (qué toca, contratos, orden):**
 
-1. En `src/page.js`, exportar `computeTotal(invoices)` y `renderPage()` (string HTML con el JS en línea). El script incrusta el código de `computeTotal` con `computeTotal.toString()`, así el test y la página usan la misma función.
-2. El JS de la página llama a `fetch('/api/invoices?status=&month=')`, rellena la tabla y el total, y arma el enlace del botón hacia `/api/export.csv` con los mismos filtros. Las etiquetas pagada, abierta y anulada se mapean a `paid`, `open` y `void` solo en la página.
+1. En `src/page.js`, exportar `computeTotal(invoices)`, `renderRows(invoices)` (filas `<tr>` con el HTML escapado) y `renderPage()` (string HTML con el JS en línea). El script incrusta `computeTotal` y `renderRows` con `.toString()`, así el test y la página usan las mismas funciones.
+2. El JS de la página llama a `fetch('/api/invoices?status=&month=')`, rellena la tabla (con `renderRows`) y el total (con `computeTotal`), y arma el enlace del botón con `buildExportUrl({ status, month, includeVoid })` (función pura exportada, con test), que apunta a `/api/export.csv` con los mismos filtros y agrega `includeVoid=true` solo si la casilla está marcada. Si la API responde 400, escribe el `error` en `id="error"` y no toca la tabla. El campo de mes es `type="month"` con `pattern` y `placeholder="2026-08"`. Las etiquetas pagada, abierta y anulada se mapean a `paid`, `open` y `void` solo en la página.
 3. Reemplazar el stub `handlePage` para responder 200 con `text/html; charset=utf-8`. No tocar `src/server.js`.
 
-**Contratos que cambian:** `GET /` deja de responder 501; módulo `computeTotal(invoices) -> number`.
+**Contratos que cambian:** `GET /` deja de responder 501; módulos `computeTotal(invoices) -> number`, `renderRows(invoices) -> string` y `buildExportUrl(options) -> string`.
 
-**Test de aceptación (falla antes de codear):** `test/page.test.js`, criterios P8 a P10. Ejemplo: `computeTotal` de las 4 facturas del fixture da `4690000`.
+**Test de aceptación (falla antes de codear):** `test/page.test.js`, criterios P8 a P10, P17 y P18. Ejemplo: `computeTotal` de las 4 facturas del fixture da `4690000`.
 
 ### T-02-panel Story 3: `feat/T-02-panel-story-3` (Descarga)
 
 **Persona:** Juan.
 
-**Qué entra:** `GET /api/export.csv` con los filtros, reutilizando el export de T-01. Cubre P11 a P14.
+**Qué entra:** `GET /api/export.csv` con los filtros, reutilizando el export de T-01, con el parámetro `includeVoid`. Cubre P11 a P14 y P16.
 
 **Diseño técnico (qué toca, contratos, orden):**
 
-1. En `src/export-route.js`, reemplazar el stub `handleExport`: usar `parseFilters` (400 JSON si es inválido) y armar el CSV. Con `status` usa `toCsv(filterInvoices(listInvoices(), { status, month }))`; sin `status` usa `buildExport({ month })` para mantener la regla de T-01 (sin anuladas).
+1. En `src/export-route.js`, reemplazar el stub `handleExport`: usar `parseFilters` (400 JSON si es inválido) y leer `includeVoid` (`true`, `false` o vacío; cualquier otro valor da 400). Con `status` usa `toCsv(filterInvoices(listInvoices(), { status, month }))` e ignora `includeVoid`; sin `status` usa `buildExport({ month, includeVoid })`, que mantiene la regla de T-01 (sin anuladas salvo `includeVoid=true`).
 2. Responder con `Content-Type: text/csv; charset=utf-8` y `Content-Disposition: attachment; filename="facturas.csv"`. Un error de `toCsv` (monto inválido) responde 500 con JSON legible, sin stack trace.
 3. No tocar `src/server.js` ni `src/csv.js`.
 
-**Contratos que cambian:** `GET /api/export.csv?status=&month=` deja de responder 501. El formato del CSV no cambia.
+**Contratos que cambian:** `GET /api/export.csv?status=&month=&includeVoid=` deja de responder 501. El formato del CSV no cambia.
 
-**Test de aceptación (falla antes de codear):** `test/export-route.test.js`, criterios P11 a P14. Ejemplo: `?status=void` devuelve un CSV con F-1003 y sin las demás.
+**Test de aceptación (falla antes de codear):** `test/export-route.test.js`, criterios P11 a P14 y P16. Ejemplo: `?status=void` devuelve un CSV con F-1003 y sin las demás.
 
 ### Orden (T-02-panel)
 
