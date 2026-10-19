@@ -51,6 +51,7 @@ Cada criterio se escribe como test y falla antes de codear. Fixture: `src/data/i
 12. Con `--out` en un directorio que no existe (por ejemplo `no-existe/x.csv`), el comando sale con código 1, escribe un mensaje legible en stderr (no un stack trace) y no crea la carpeta ni el archivo.
 13. Un cliente que empieza con `=`, `+`, `-`, `@`, tabulación o `\r` sale con `'` al inicio (por ejemplo `'=SUMA(A1)`), y un cliente normal no cambia (test unitario sobre `src/csv.js`).
 14. Con un flag desconocido (por ejemplo `--mes`), el comando sale con código 1, escribe un mensaje legible en stderr (no un stack trace) y no crea ningún archivo.
+15. Una factura con `amount` ausente, `null`, `NaN` o escrito como texto (por ejemplo `"1.250.000"`) no llega al CSV: `toCsv` lanza un error que nombra el id de la factura, y `export-csv` sale con código 1, escribe un mensaje legible en stderr (no un stack trace) y no crea ningún archivo. Un monto `0` sigue siendo válido.
 
 ## Fuera de alcance
 
