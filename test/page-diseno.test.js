@@ -70,7 +70,7 @@ test('P22: cada pico trae un <title> legible y escapado', () => {
 
 test('P22 y P24: la página incrusta las mismas funciones que prueba el test', () => {
   const scripts = scriptsDe(pagina.renderPage())
-  for (const nombre of ['renderCordillera', 'interpolar']) {
+  for (const nombre of ['renderCordillera', 'interpolar', 'formatearPesos']) {
     assert.equal(typeof pagina[nombre], 'function', `falta exportar ${nombre}`)
     assert.ok(scripts.includes(pagina[nombre].toString()), `el <script> no incrusta la misma ${nombre}`)
   }
@@ -108,4 +108,12 @@ test('P24: interpolar baja y sube de forma monótona entre los extremos', () => 
   assert.equal(pagina.interpolar(1250000, 0, 1), 0)
   assert.ok(pagina.interpolar(1250000, 0, 0.5) < 1250000)
   assert.ok(pagina.interpolar(1250000, 0, 0.5) > 0)
+})
+
+test('P24: formatearPesos separa los miles con punto y deja las celdas de la tabla sin formato', () => {
+  assert.equal(pagina.formatearPesos(4690000), '4.690.000')
+  assert.equal(pagina.formatearPesos(1250000), '1.250.000')
+  assert.equal(pagina.formatearPesos(890000), '890.000')
+  assert.equal(pagina.formatearPesos(0), '0')
+  assert.match(pagina.renderRows([invoices[0]]), /<td>1250000<\/td>/)
 })
