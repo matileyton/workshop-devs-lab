@@ -1,7 +1,13 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { listInvoices } from '../src/invoices.js'
-import { buildExportUrl, computeTotal, renderRows } from '../src/page.js'
+import {
+  buildExportUrl,
+  computeTotal,
+  crearTurnos,
+  mensajeDeError,
+  renderRows,
+} from '../src/page.js'
 import { withServer } from '../test-support/start-server.js'
 
 // T-02-panel, story 2 (workdocs/PLAN.md). Criterios P8, P9, P10, P17 y P18 de la
@@ -128,6 +134,57 @@ test('P10 y P18: el HTML no carga nada externo e incrusta las mismas funciones d
     scripts.includes(renderRows.toString()),
     'el <script> de la página no incrusta la misma renderRows que prueba el test',
   )
+  // Lo mismo para las dos funciones que salieron de la review del PR #13.
+  for (const funcion of [crearTurnos, mensajeDeError]) {
+    assert.ok(
+      scripts.includes(funcion.toString()),
+      `el <script> de la página no incrusta la misma ${funcion.name} que prueba el test`,
+    )
+  }
+  // El guardia tiene que estar conectado: sin esta llamada, el turno no se descarta.
+  assert.match(scripts, /if \(!turnos\.vigente\(turno\)\) return/)
+
+  // Y el turno tiene que pedirse antes de salir a la red: pedido después del await,
+  // dos cargas en vuelo vuelven a pisarse y el guardia no sirve de nada.
+  const cargar = scripts.match(/async function cargar\(\)[\s\S]*?\n}/)
+  assert.ok(cargar, 'el <script> de la página no define cargar()')
+  const pedido = cargar[0].indexOf('turnos.pedir()')
+  const red = cargar[0].indexOf('await fetch(')
+  assert.notEqual(pedido, -1, 'cargar() no pide turno')
+  assert.notEqual(red, -1, 'cargar() no consulta la API')
+  assert.ok(pedido < red, 'cargar() pide el turno después de salir a la red')
+})
+
+// Review del PR #13: dos cargar() en vuelo podían dejar la tabla con el filtro viejo.
+test('crearTurnos: solo el último turno pedido sigue vigente', () => {
+  const turnos = crearTurnos()
+
+  const primero = turnos.pedir()
+  assert.equal(turnos.vigente(primero), true)
+
+  const segundo = turnos.pedir()
+  assert.notEqual(segundo, primero)
+  assert.equal(turnos.vigente(segundo), true)
+  // El primero llega tarde: su respuesta ya no puede pisar la tabla.
+  assert.equal(turnos.vigente(primero), false)
+
+  // Cada panel lleva su propia cuenta: un contador nuevo no da por vigente nada
+  // que no haya pedido él, y empieza de cero.
+  const otros = crearTurnos()
+  assert.equal(otros.vigente(primero), false)
+  assert.equal(otros.vigente(segundo), false)
+  assert.equal(otros.pedir(), primero)
+})
+
+// Review del PR #13: un error sin mensaje mostraba "undefined" en id="error".
+test('mensajeDeError: usa el mensaje de la API y, si no hay, explica el status', () => {
+  assert.equal(mensajeDeError(400, { error: 'month inválido: 2026-13' }), 'month inválido: 2026-13')
+
+  for (const cuerpo of [{}, { error: '' }, { error: null }, null, undefined]) {
+    const mensaje = mensajeDeError(500, cuerpo)
+    assert.doesNotMatch(mensaje, /undefined|null/)
+    assert.match(mensaje, /500/)
+  }
 })
 
 test('P17: buildExportUrl arma la URL solo con los filtros que hay', () => {

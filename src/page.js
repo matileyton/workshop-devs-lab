@@ -41,6 +41,23 @@ export function buildExportUrl({ status, month, includeVoid }) {
   return query ? `/api/export.csv?${query}` : '/api/export.csv'
 }
 
+// Manda la consulta más nueva: una respuesta que llega tarde no puede pisar la tabla
+// con el filtro anterior. Hallazgo de la review del PR #13.
+export function crearTurnos() {
+  let ultimo = 0
+  return {
+    pedir: () => (ultimo += 1),
+    vigente: (turno) => turno === ultimo,
+  }
+}
+
+// Un error sin mensaje no se le muestra a María como "undefined".
+export function mensajeDeError(status, cuerpo) {
+  const mensaje = cuerpo?.error
+  if (typeof mensaje === 'string' && mensaje !== '') return mensaje
+  return `La API respondió ${status} sin explicar el error.`
+}
+
 function renderOptions() {
   const opciones = [['', 'todos'], ...Object.entries(ESTADOS)]
   return opciones
@@ -59,6 +76,12 @@ ${computeTotal.toString()}
 ${renderRows.toString()}
 
 ${buildExportUrl.toString()}
+
+${crearTurnos.toString()}
+
+${mensajeDeError.toString()}
+
+const turnos = crearTurnos()
 
 const estado = document.getElementById('estado')
 const mes = document.getElementById('mes')
@@ -82,21 +105,32 @@ async function cargar() {
   if (status) params.set('status', status)
   if (month) params.set('month', month)
   const query = params.toString()
+  const turno = turnos.pedir()
 
+  let respuesta
+  let cuerpo
+  // El try cubre solo la red: si falla el render, el mensaje no culpa a la API.
   try {
-    const respuesta = await fetch('/api/invoices' + (query ? '?' + query : ''))
-    const cuerpo = await respuesta.json()
-    if (!respuesta.ok) {
-      // La tabla queda como estaba: María sigue viendo lo último que cargó bien.
-      error.textContent = cuerpo.error
-      return
-    }
-    error.textContent = ''
-    filas.innerHTML = renderRows(cuerpo)
-    total.textContent = computeTotal(cuerpo)
+    respuesta = await fetch('/api/invoices' + (query ? '?' + query : ''))
+    cuerpo = await respuesta.json()
   } catch {
-    error.textContent = 'No se pudo consultar la API. ¿Sigue corriendo node src/server.js?'
+    if (turnos.vigente(turno)) {
+      error.textContent = 'No se pudo consultar la API. ¿Sigue corriendo node src/server.js?'
+    }
+    return
   }
+
+  // Llegó tarde: ya hay una consulta más nueva en vuelo.
+  if (!turnos.vigente(turno)) return
+
+  if (!respuesta.ok) {
+    // La tabla queda como estaba: María sigue viendo lo último que cargó bien.
+    error.textContent = mensajeDeError(respuesta.status, cuerpo)
+    return
+  }
+  error.textContent = ''
+  filas.innerHTML = renderRows(cuerpo)
+  total.textContent = computeTotal(cuerpo)
 }
 
 for (const campo of [estado, mes]) {
